@@ -2,7 +2,7 @@
 #include <string>
 #include <android/native_window.h>
 
-void rust_function();
+extern "C" void rust_function();
 
 
 extern "C"

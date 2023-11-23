@@ -1,1 +1,0 @@
-cargo ndk -t arm64-v8a  build && cp target/aarch64-linux-android/debug/librust_sprite.a /Users/rqg/Playground/bevy_android_surface_view/app/src/main/cpp/libs/arm64-v8a

@@ -31,9 +31,11 @@ class MainActivity : AppCompatActivity() {
             if (gameStarted) {
                 NativeBridge.gameStop()
                 mBtnToggle.text = "Start"
+                gameStarted = false
             } else {
                 NativeBridge.gameStart()
                 mBtnToggle.text = "Stop"
+                gameStarted = true
             }
         }
 
