@@ -45,6 +45,16 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    override fun onResume() {
+        super.onResume()
+        NativeBridge.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        NativeBridge.onPause()
+    }
+
 
     private val surfaceTouchListener = View.OnTouchListener { _, event ->
         NativeBridge.touchEvent(event.x, event.y)

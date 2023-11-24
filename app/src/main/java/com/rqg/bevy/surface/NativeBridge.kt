@@ -26,9 +26,11 @@ class NativeBridge {
 
         external fun gameStop()
 
-        fun touchEvent(x: Float, y: Float) {
+        external fun touchEvent(x: Float, y: Float)
 
-        }
+        external fun onResume()
+
+        external fun onPause()
 
         // Used to load the 'surface' library on application startup.
         init {
