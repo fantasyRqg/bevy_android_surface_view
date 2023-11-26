@@ -22,11 +22,11 @@ class NativeBridge {
 
         external fun surfaceDestroyed()
 
-        external fun gameStart()
+        external fun runGameLoop()
 
-        external fun gameStop()
+        external fun stopGame()
 
-        external fun touchEvent(x: Float, y: Float)
+        external fun touchEvent(pointerId: Int, acton: Int, x: Float, y: Float)
 
         external fun onResume()
 

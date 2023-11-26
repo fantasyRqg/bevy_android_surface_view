@@ -1,5 +1,6 @@
 package com.rqg.bevy.surface
 
+import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MotionEvent
@@ -29,11 +30,11 @@ class MainActivity : AppCompatActivity() {
         mBtnToggle.text = "Start"
         mBtnToggle.setOnClickListener {
             if (gameStarted) {
-                NativeBridge.gameStop()
+                stopGame()
                 mBtnToggle.text = "Start"
                 gameStarted = false
             } else {
-                NativeBridge.gameStart()
+                startGame()
                 mBtnToggle.text = "Stop"
                 gameStarted = true
             }
@@ -43,6 +44,22 @@ class MainActivity : AppCompatActivity() {
 
         mSurfaceView.setOnTouchListener(surfaceTouchListener)
 
+    }
+
+    private var gameThread: Thread? = null
+    fun startGame() {
+        if (gameThread == null) {
+            gameThread = Thread {
+                NativeBridge.runGameLoop()
+            }
+            gameThread?.start()
+        }
+    }
+
+    fun stopGame() {
+        NativeBridge.stopGame()
+        gameThread?.join()
+        gameThread = null
     }
 
     override fun onResume() {
@@ -56,9 +73,13 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    @SuppressLint("ClickableViewAccessibility")
     private val surfaceTouchListener = View.OnTouchListener { _, event ->
-        NativeBridge.touchEvent(event.x, event.y)
 
+        val pointerId = event.getPointerId(event.actionIndex)
+        val action = event.actionMasked
+        MotionEvent.ACTION_DOWN
+        NativeBridge.touchEvent(pointerId, action, event.x, event.y)
         return@OnTouchListener true
     }
 
