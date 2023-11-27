@@ -111,26 +111,47 @@ fn my_runner(mut app: App) {
 
     let mut quit = false;
 
-    let event_handler = move |event: Cmd| {
+    let mut event_handler = |event: Cmd, quit: &mut bool, app: &mut App, winit_window: &mut WinitWindow| {
+        info!("handle event: {:?}", event);
         match event {
             Cmd::SurfaceCreated(native_window) => {
-                let (commands,
+                if let Some(MyWindow(old_win)) = &winit_window.window {
+                    if *old_win == native_window {
+                        return;
+                    } else {}
+                }
+                let (mut commands,
                     mut win_query,
-                    win_evt_writer,
+                    mut win_evt_writer,
                 ) = create_window_system_state.get_mut(&mut app.world);
 
-                create_windows(
-                    commands,
-                    win_query.iter_mut(),
-                    win_evt_writer,
-                    &mut winit_window,
-                    native_window,
-                );
+                if let Some(window_entity) = &winit_window.entity {
+                    let native_window: MyWindow = native_window.into();
+                    let win_entity = *window_entity;
+
+                    commands
+                        .entity(win_entity)
+                        .insert(RawHandleWrapper {
+                            window_handle: native_window.raw_window_handle(),
+                            display_handle: native_window.raw_display_handle(),
+                        });
+
+                    winit_window.window = Some(native_window);
+                    win_evt_writer.send(WindowCreated { window: win_entity });
+                } else {
+                    create_windows(
+                        commands,
+                        win_query.iter_mut(),
+                        win_evt_writer,
+                        winit_window,
+                        native_window,
+                    );
+                }
 
                 create_window_system_state.apply(&mut app.world);
             }
-            Cmd::OnResume | Cmd::SurfaceChanged(_, _) | Cmd::SurfaceDestroyed
-            | Cmd::StopGame | Cmd::TouchEvent(_) | Cmd::OnPause => {
+
+            Cmd::SurfaceChanged(width, height) => {
                 let (mut event_writers,
                     mut windows,
                 ) = event_writer_system_state.get_mut(&mut app.world);
@@ -143,54 +164,82 @@ fn my_runner(mut app: App) {
                 let window_entity = window_entity.unwrap();
                 let mut window = windows.get_mut(window_entity).unwrap();
 
-                match event {
-                    Cmd::SurfaceChanged(width, height) => {
-                        window
-                            .resolution
-                            .set_physical_resolution(width, height);
 
-                        event_writers.window_resized.send(WindowResized {
-                            window: window_entity,
-                            width: window.width(),
-                            height: window.height(),
-                        });
+                window
+                    .resolution
+                    .set_physical_resolution(width, height);
 
-                        winit_window.app_should_run = true;
-                    }
-                    Cmd::SurfaceDestroyed => {
-                        event_writers.window_destroyed.send(WindowDestroyed {
-                            window: window_entity,
-                        });
-                        winit_window.app_should_run = false;
-                    }
-                    Cmd::OnResume => {
-                        match winit_window.started {
-                            false => {
-                                event_writers.lifetime.send(ApplicationLifetime::Started);
-                            }
-                            _ => {
-                                event_writers.lifetime.send(ApplicationLifetime::Resumed);
-                            }
-                        }
-                    }
+                event_writers.window_resized.send(WindowResized {
+                    window: window_entity,
+                    width: window.width(),
+                    height: window.height(),
+                });
 
-                    Cmd::StopGame => {
-                        quit = true;
-                    }
-                    Cmd::TouchEvent(input) => {
-                        event_writers
-                            .touch_input
-                            .send(input);
-                    }
-                    Cmd::OnPause => {
-                        event_writers.lifetime.send(ApplicationLifetime::Suspended);
-                        // handel pause
-                        if winit_window.app_should_run {
-                            app.update();
-                        }
-                    }
-                    _ => {}
+                winit_window.app_should_run = true;
+            }
+            Cmd::SurfaceDestroyed => {
+                let (mut event_writers,
+                    _,
+                ) = event_writer_system_state.get_mut(&mut app.world);
+
+
+                let window_entity = winit_window.entity;
+                if window_entity == None {
+                    panic!("window_entity == None");
                 }
+                let window_entity = window_entity.unwrap();
+
+
+                event_writers.window_destroyed.send(WindowDestroyed {
+                    window: window_entity,
+                });
+
+                app.world.entity_mut(window_entity).remove::<RawHandleWrapper>();
+
+                winit_window.window = None;
+                if winit_window.app_should_run {
+                    app.update();
+                }
+                winit_window.app_should_run = false;
+            }
+            Cmd::OnResume => {
+                let (mut event_writers,
+                    _,
+                ) = event_writer_system_state.get_mut(&mut app.world);
+
+                match winit_window.started {
+                    false => {
+                        event_writers.lifetime.send(ApplicationLifetime::Started);
+                    }
+                    _ => {
+                        event_writers.lifetime.send(ApplicationLifetime::Resumed);
+                    }
+                }
+            }
+
+            Cmd::StopGame => {
+                *quit = true;
+            }
+            Cmd::TouchEvent(input) => {
+                let (mut event_writers,
+                    _,
+                ) = event_writer_system_state.get_mut(&mut app.world);
+
+                event_writers
+                    .touch_input
+                    .send(input);
+            }
+            Cmd::OnPause => {
+                let (mut event_writers,
+                    _,
+                ) = event_writer_system_state.get_mut(&mut app.world);
+
+                event_writers.lifetime.send(ApplicationLifetime::Suspended);
+                // handel pause
+                if winit_window.app_should_run {
+                    app.update();
+                }
+                winit_window.app_should_run = false;
             }
         }
     };
@@ -209,11 +258,15 @@ fn my_runner(mut app: App) {
             }
         }
 
+        let since_last_update = Instant::now().checked_duration_since(winit_window.last_update)
+            .unwrap_or_else(|| Duration::from_secs(0));
+        // info!("since_last_update: {:?}, wait_duration: {:?}", since_last_update,wait_duration);
         let next_wait_duration = wait_duration
-            .checked_sub(wait_duration - (Instant::now() - winit_window.last_update))
+            .checked_sub(since_last_update)
             .unwrap_or_else(|| Duration::from_secs(0));
         if let Ok(event) = cmd_receiver.recv_timeout(next_wait_duration) {
-            event_handler(event);
+            // info!("event: {:?}", event);
+            event_handler(event, &mut quit, &mut app, &mut winit_window);
         } else {
             if app.plugins_state() == PluginsState::Cleaned && winit_window.app_should_run {
                 winit_window.last_update = Instant::now();
@@ -222,7 +275,7 @@ fn my_runner(mut app: App) {
 
             if let Some(app_exit_events) = app.world.get_resource::<Events<AppExit>>() {
                 if app_exit_event_reader.read(app_exit_events).last().is_some() {
-                    event_handler(Cmd::StopGame);
+                    event_handler(Cmd::StopGame, &mut quit, &mut app, &mut winit_window);
                 }
             }
         }

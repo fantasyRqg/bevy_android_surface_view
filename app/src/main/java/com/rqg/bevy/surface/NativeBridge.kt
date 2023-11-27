@@ -1,5 +1,6 @@
 package com.rqg.bevy.surface
 
+import android.app.Activity
 import android.view.Surface
 
 /**
@@ -16,7 +17,7 @@ class NativeBridge {
     companion object {
         external fun surfaceRedrawNeeded();
 
-        external fun surfaceCreated(surface: Surface)
+        external fun surfaceCreated(surface: Surface, activity: Activity)
 
         external fun surfaceChanged(width: Int, height: Int)
 
@@ -31,6 +32,8 @@ class NativeBridge {
         external fun onResume()
 
         external fun onPause()
+
+        external fun initCommandQueue()
 
         // Used to load the 'surface' library on application startup.
         init {

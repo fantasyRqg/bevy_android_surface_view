@@ -9,7 +9,7 @@
 #define LOG_TAG "NativeBridge"
 
 extern "C" void surfaceRedrawNeeded();
-extern "C" void surfaceCreated(ANativeWindow *pWindow);
+extern "C" void surfaceCreated(ANativeWindow *pWindow, JavaVM *jvm, jobject activity);
 extern "C" void surfaceChanged(uint32_t width, uint32_t height);
 extern "C" void surfaceDestroyed();
 extern "C" void runGameLoop();
@@ -17,6 +17,7 @@ extern "C" void stopGame();
 extern "C" void touchEvent(uint32_t pointerId, uint32_t action, float x, float y);
 extern "C" void onResume();
 extern "C" void onPause();
+extern "C" void initCommandQueue();
 
 
 extern "C"
@@ -24,12 +25,8 @@ JNIEXPORT void JNICALL
 Java_com_rqg_bevy_surface_NativeBridge_00024Companion_surfaceRedrawNeeded(JNIEnv *env, jobject thiz) {
     surfaceRedrawNeeded();
 }
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_rqg_bevy_surface_NativeBridge_00024Companion_surfaceCreated(JNIEnv *env, jobject thiz, jobject surface) {
-    auto win = ANativeWindow_fromSurface(env, surface);
-    surfaceCreated(win);
-}
+
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rqg_bevy_surface_NativeBridge_00024Companion_surfaceChanged(JNIEnv *env, jobject thiz, jint width, jint height) {
@@ -65,4 +62,17 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_rqg_bevy_surface_NativeBridge_00024Companion_touchEvent(JNIEnv *env, jobject thiz, jint pointer_id, jint acton, jfloat x, jfloat y) {
     touchEvent(pointer_id, acton, x, y);
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rqg_bevy_surface_NativeBridge_00024Companion_surfaceCreated(JNIEnv *env, jobject thiz, jobject surface, jobject activity) {
+    auto win = ANativeWindow_fromSurface(env, surface);
+    JavaVM *jvm;
+    env->GetJavaVM(&jvm);
+    surfaceCreated(win, jvm, activity);
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rqg_bevy_surface_NativeBridge_00024Companion_initCommandQueue(JNIEnv *env, jobject thiz) {
+    initCommandQueue();
 }

@@ -24,5 +24,7 @@ add_library(surface SHARED
 target_link_libraries(surface
         android
         log
+        OpenSLES
+        unwind
         bevy_surface
         )

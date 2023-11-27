@@ -2,24 +2,44 @@ use std::os::raw::c_uint;
 use std::ptr::NonNull;
 
 use bevy::input::touch::TouchPhase;
+use bevy::log::info;
 use bevy::math::vec2;
 use bevy::prelude::TouchInput;
+use bevy::utils::info;
+use jni_sys::{JavaVM, JNIEnv, jobject};
 use ndk::event::MotionAction;
 use ndk::native_window::NativeWindow;
 use ndk_sys::ANativeWindow;
 
-use crate::{Cmd, run_game_loop};
+use crate::{Cmd, init_command_queue, run_game_loop};
+
+
+#[no_mangle]
+pub extern "C" fn initCommandQueue() {
+    init_command_queue();
+}
 
 #[no_mangle]
 pub extern "C" fn surfaceRedrawNeeded() {
     //ignore this
 }
 
+static mut CONTEXT_INITIALIZED: bool = false;
+
 #[no_mangle]
 pub extern "C" fn surfaceCreated(
     window: *mut ANativeWindow,
+    vm: *mut JavaVM,
+    activity: jobject,
 ) {
     unsafe {
+        if CONTEXT_INITIALIZED {
+            info!("surfaceCreated called again, release the old context first");
+            ndk_context::release_android_context();
+        }
+        ndk_context::initialize_android_context(vm.cast(), activity.cast());
+        info!("surfaceCreated called, initialize the context");
+        CONTEXT_INITIALIZED = true;
         let window = NativeWindow::from_ptr(NonNull::new(window).unwrap());
         Cmd::SurfaceCreated(window).send();
     }
@@ -42,6 +62,10 @@ pub extern "C" fn surfaceDestroyed() {
 #[no_mangle]
 pub extern "C" fn runGameLoop() {
     run_game_loop();
+    unsafe {
+        ndk_context::release_android_context();
+        CONTEXT_INITIALIZED = false;
+    }
 }
 
 #[no_mangle]

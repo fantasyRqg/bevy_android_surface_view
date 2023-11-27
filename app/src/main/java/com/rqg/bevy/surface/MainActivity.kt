@@ -3,6 +3,8 @@ package com.rqg.bevy.surface
 import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -10,6 +12,9 @@ import android.view.View
 import android.widget.Button
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        private const val TAG = "MainActivity"
+    }
 
     private val mSurfaceView: SurfaceView by lazy {
         findViewById(R.id.surface_view)
@@ -44,30 +49,46 @@ class MainActivity : AppCompatActivity() {
 
         mSurfaceView.setOnTouchListener(surfaceTouchListener)
 
+        NativeBridge.initCommandQueue()
     }
 
     private var gameThread: Thread? = null
     fun startGame() {
-        if (gameThread == null) {
-            gameThread = Thread {
-                NativeBridge.runGameLoop()
-            }
-            gameThread?.start()
+        Log.d(TAG, "startGame() called")
+        if (gameThread != null) {
+            stopGame()
+        }
+
+        gameThread = Thread {
+            NativeBridge.runGameLoop()
+        }
+        gameThread?.start()
+
+        // Tell the native renderer that a surface has been created.
+        if (mSurfaceView.holder.surface.isValid) {
+            Log.d(TAG, "startGame: surface is valid")
+            NativeBridge.surfaceCreated(mSurfaceView.holder.surface, this)
+            val frame = mSurfaceView.holder.surfaceFrame
+            NativeBridge.surfaceChanged(frame.width(), frame.height())
         }
     }
 
     fun stopGame() {
+        Log.d(TAG, "stopGame() called")
         NativeBridge.stopGame()
         gameThread?.join()
         gameThread = null
+        Log.d(TAG, "stopGame() finished")
     }
 
     override fun onResume() {
+        Log.d(TAG, "onResume() called")
         super.onResume()
         NativeBridge.onResume()
     }
 
     override fun onPause() {
+        Log.d(TAG, "onPause() called")
         super.onPause()
         NativeBridge.onPause()
     }
@@ -91,7 +112,7 @@ class MainActivity : AppCompatActivity() {
 
         override fun surfaceCreated(holder: SurfaceHolder) {
             // Tell the native renderer that a surface has been created.
-            NativeBridge.surfaceCreated(holder.surface)
+            NativeBridge.surfaceCreated(holder.surface, this@MainActivity)
         }
 
         override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
