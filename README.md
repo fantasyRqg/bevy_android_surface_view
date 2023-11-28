@@ -14,3 +14,5 @@ Run `./gradlew assembleDebug` in the root directory of this project.
 1. How to get AssetManager, remove dependency on `bevy_winit::ANDROID_APP`,  change to extern function `get_asset_manager` . 
 >  This modification has pushed to https://github.com/fantasyRqg/bevy/tree/no_winit
 
+## Problems
+1. Not working on too many sprites. Seems like on stop not release all resources.
