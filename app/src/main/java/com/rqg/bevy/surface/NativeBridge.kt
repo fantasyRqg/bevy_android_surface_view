@@ -1,6 +1,7 @@
 package com.rqg.bevy.surface
 
 import android.app.Activity
+import android.content.res.AssetManager
 import android.view.Surface
 
 /**
@@ -33,7 +34,7 @@ class NativeBridge {
 
         external fun onPause()
 
-        private external fun initCommandQueue()
+        external fun initialize(assetManager: AssetManager)
 
         external fun drainCommandQueue()
 
@@ -44,7 +45,6 @@ class NativeBridge {
         // Used to load the 'surface' library on application startup.
         init {
             System.loadLibrary("surface")
-            initCommandQueue()
         }
     }
 }

@@ -49,6 +49,7 @@ class MainActivity : AppCompatActivity() {
 
         mSurfaceView.setOnTouchListener(surfaceTouchListener)
 
+        NativeBridge.initialize(assets)
         NativeBridge.activityCreated(this)
     }
 

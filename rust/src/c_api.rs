@@ -9,9 +9,10 @@ use bevy::log::{info, Level};
 use bevy::math::vec2;
 use bevy::prelude::TouchInput;
 use jni_sys::{JavaVM, jobject};
+use ndk::asset::AssetManager;
 use ndk::event::MotionAction;
 use ndk::native_window::NativeWindow;
-use ndk_sys::ANativeWindow;
+use ndk_sys::{AAssetManager, ANativeWindow};
 
 use crate::{Cmd, CMD_QUEUE, init_command_queue, run_game_loop};
 
@@ -67,9 +68,17 @@ fn android_log(level: Level, tag: &CStr, msg: &CStr) {
 }
 
 #[no_mangle]
-pub extern "C" fn initCommandQueue() {
+pub extern "C" fn initialize(
+    asset_manager: *mut AAssetManager,
+) {
     forward_stdio_to_logcat();
     init_command_queue();
+
+    unsafe {
+        let mut am = CMD_QUEUE.get().unwrap()
+            .asset_manager.lock().unwrap();
+        *am = Some(AssetManager::from_ptr(NonNull::new(asset_manager).unwrap()));
+    }
 }
 
 #[no_mangle]

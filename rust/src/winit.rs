@@ -113,7 +113,7 @@ fn my_runner(mut app: App) {
     let mut quit = false;
 
     let mut event_handler = |event: Cmd, quit: &mut bool, app: &mut App, winit_window: &mut WinitWindow| {
-        info!("handle event: {:?}", event);
+        // info!("handle event: {:?}", event);
 
         if app.plugins_state() != PluginsState::Cleaned {
             if app.plugins_state() != PluginsState::Ready {
@@ -318,7 +318,6 @@ fn create_windows<'a>(
     native_window: NativeWindow,
 ) {
     let (win_entity, mut window) = created_windows.next().unwrap();
-
 
     window.resolution
         .set_scale_factor(1.0);

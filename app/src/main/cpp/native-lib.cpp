@@ -2,6 +2,7 @@
 #include <string>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
+#include <android/asset_manager_jni.h>
 
 
 #include "log.h"
@@ -17,7 +18,7 @@ extern "C" void stopGame();
 extern "C" void touchEvent(uint32_t pointerId, uint32_t action, float x, float y);
 extern "C" void onResume();
 extern "C" void onPause();
-extern "C" void initCommandQueue();
+extern "C" void initialize(AAssetManager *pAssetManager);
 extern "C" void drainCommandQueue();
 extern "C" void activityCreated(JavaVM *jvm, jobject activity);
 extern "C" void activityDestroyed();
@@ -74,11 +75,6 @@ Java_com_rqg_bevy_surface_NativeBridge_00024Companion_surfaceCreated(JNIEnv *env
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_rqg_bevy_surface_NativeBridge_00024Companion_initCommandQueue(JNIEnv *env, jobject thiz) {
-    initCommandQueue();
-}
-extern "C"
-JNIEXPORT void JNICALL
 Java_com_rqg_bevy_surface_NativeBridge_00024Companion_drainCommandQueue(JNIEnv *env, jobject thiz) {
     drainCommandQueue();
 }
@@ -93,4 +89,9 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_rqg_bevy_surface_NativeBridge_00024Companion_activityDestroyed(JNIEnv *env, jobject thiz) {
     activityDestroyed();
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rqg_bevy_surface_NativeBridge_00024Companion_initialize(JNIEnv *env, jobject thiz, jobject asset_manager) {
+    initialize(AAssetManager_fromJava(env, asset_manager));
 }
