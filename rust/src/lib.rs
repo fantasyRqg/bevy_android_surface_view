@@ -1,4 +1,4 @@
-use std::sync::{Arc, mpsc, Mutex, OnceLock};
+use std::sync::{Arc, Condvar, mpsc, Mutex, OnceLock};
 use std::sync::mpsc::Sender;
 
 use ::winit::platform::android::activity::AndroidApp;
@@ -27,9 +27,12 @@ enum Cmd {
 struct CmdQueue {
     sender: Arc<Mutex<Sender<Cmd>>>,
     receiver: Arc<Mutex<mpsc::Receiver<Cmd>>>,
+    surface_destroyed_handle_done: Arc<Mutex<bool>>,
+    surface_destroyed_handle_done_var: Arc<Condvar>,
+    running_loop: Arc<Mutex<bool>>,
 }
 
-pub static CMD_QUEUE: OnceLock<CmdQueue> = OnceLock::new();
+static CMD_QUEUE: OnceLock<CmdQueue> = OnceLock::new();
 
 impl Cmd {
     fn send(self) {
@@ -51,12 +54,19 @@ pub fn init_command_queue() {
         CmdQueue {
             sender: Arc::new(Mutex::new(tx)),
             receiver: Arc::new(Mutex::new(rx)),
+            surface_destroyed_handle_done: Arc::new(Mutex::new(true)),
+            surface_destroyed_handle_done_var: Arc::new(Condvar::new()),
+            running_loop: Arc::new(Mutex::new(false)),
         }
     });
 }
 
 pub fn run_game_loop() {
     info!("start game loop");
+    {
+        let mut running_loop = CMD_QUEUE.get().unwrap().running_loop.lock().unwrap();
+        *running_loop = true;
+    }
 
     let mut app = App::new();
     app
@@ -98,6 +108,11 @@ pub fn run_game_loop() {
         for cmd in cmd_receiver.try_iter() {
             info!("discard previous run cmd: {:?}", cmd);
         }
+    }
+
+    {
+        let mut running_loop = CMD_QUEUE.get().unwrap().running_loop.lock().unwrap();
+        *running_loop = false;
     }
 }
 

@@ -6,13 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { path = "/Users/rqg/Playground/bevy", default-features = false, features = ["bevy_render", "bevy_asset", "bevy_sprite", "bevy_audio", "bevy_text", "bevy_ui", "bevy_audio"] }
+bevy = { version = "0.12.0", default-features = false, features = ["bevy_render", "bevy_asset", "bevy_sprite", "bevy_audio", "bevy_text", "bevy_ui", "bevy_audio"] }
 winit = "0.28.7"
 raw-window-handle = "0.5.2"
 ndk = "0.7.0"
 ndk-sys = "0.4.1+23.1.7779620"
 ndk-context = "0.1.1"
 jni-sys = "0.3.0"
+libc = "0.2.150"
 
 [lib]
 name = "bevy_surface"

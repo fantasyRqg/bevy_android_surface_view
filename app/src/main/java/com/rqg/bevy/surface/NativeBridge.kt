@@ -17,7 +17,7 @@ class NativeBridge {
     companion object {
         external fun surfaceRedrawNeeded();
 
-        external fun surfaceCreated(surface: Surface, activity: Activity)
+        external fun surfaceCreated(surface: Surface)
 
         external fun surfaceChanged(width: Int, height: Int)
 
@@ -33,11 +33,18 @@ class NativeBridge {
 
         external fun onPause()
 
-        external fun initCommandQueue()
+        private external fun initCommandQueue()
+
+        external fun drainCommandQueue()
+
+        external fun activityCreated(activity: Activity)
+
+        external fun activityDestroyed()
 
         // Used to load the 'surface' library on application startup.
         init {
             System.loadLibrary("surface")
+            initCommandQueue()
         }
     }
 }

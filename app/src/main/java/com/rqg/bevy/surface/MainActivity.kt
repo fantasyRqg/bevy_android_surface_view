@@ -49,7 +49,12 @@ class MainActivity : AppCompatActivity() {
 
         mSurfaceView.setOnTouchListener(surfaceTouchListener)
 
-        NativeBridge.initCommandQueue()
+        NativeBridge.activityCreated(this)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        NativeBridge.activityDestroyed()
     }
 
     private var gameThread: Thread? = null
@@ -59,6 +64,8 @@ class MainActivity : AppCompatActivity() {
             stopGame()
         }
 
+
+        NativeBridge.drainCommandQueue()
         gameThread = Thread {
             NativeBridge.runGameLoop()
         }
@@ -67,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         // Tell the native renderer that a surface has been created.
         if (mSurfaceView.holder.surface.isValid) {
             Log.d(TAG, "startGame: surface is valid")
-            NativeBridge.surfaceCreated(mSurfaceView.holder.surface, this)
+            NativeBridge.surfaceCreated(mSurfaceView.holder.surface)
             val frame = mSurfaceView.holder.surfaceFrame
             NativeBridge.surfaceChanged(frame.width(), frame.height())
         }
@@ -112,7 +119,7 @@ class MainActivity : AppCompatActivity() {
 
         override fun surfaceCreated(holder: SurfaceHolder) {
             // Tell the native renderer that a surface has been created.
-            NativeBridge.surfaceCreated(holder.surface, this@MainActivity)
+            NativeBridge.surfaceCreated(holder.surface)
         }
 
         override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
