@@ -15,4 +15,4 @@ Run `./gradlew assembleDebug` in the root directory of this project.
 >  This modification has pushed to https://github.com/fantasyRqg/bevy/tree/no_winit
 
 ## Problems
-1. Not working on too many sprites. Seems like on stop not release all resources.
+No problems found yet.
