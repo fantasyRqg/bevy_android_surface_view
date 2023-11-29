@@ -93,16 +93,17 @@ pub fn run_game_loop() {
                     ..default()
                 })
                 .set(ImagePlugin::default_nearest())
-            .disable::<WinitPlugin>() // removed by bevy feature selection
+                .disable::<WinitPlugin>() // removed by bevy feature selection
         )
-        .insert_resource(LastTouchMove::default())
         .add_plugins(MyWinitPlugin {})
+        .insert_resource(LastTouchMove::default())
         .add_systems(Startup, setup)
-        .add_systems(Update, (
-            update,
-            move_system,
-            btn_system,
-        ),
+        .add_systems(Update,
+                     (
+                         update,
+                         move_system,
+                         btn_system,
+                     ),
         )
     ;
 
@@ -110,7 +111,6 @@ pub fn run_game_loop() {
     app.insert_resource(Msaa::Off);
 
     app.run();
-
 
     // drain the queue
     {
@@ -204,7 +204,7 @@ fn setup(
             })
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
-                        "Click Me",
+                        "Click Meeee",
                         TextStyle {
                             font: asset_loader.load("fonts/FiraMono-Medium.ttf"),
                             font_size: 30.,
@@ -221,7 +221,7 @@ fn update(
     mut query: Query<&mut Transform, With<Elm>>,
 ) {
     for mut transform in query.iter_mut() {
-        transform.rotate_z(time.delta_seconds() * 2.1);
+        transform.rotate_z(time.delta_seconds() * 2.3);
     }
 }
 

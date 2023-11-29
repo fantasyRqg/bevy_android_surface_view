@@ -18,4 +18,4 @@ libc = "0.2.150"
 
 [lib]
 name = "bevy_surface"
-crate-type = ["staticlib", "cdylib"]
+crate-type = ["cdylib"]

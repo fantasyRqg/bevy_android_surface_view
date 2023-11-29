@@ -8,4 +8,4 @@ fi
 
 #export RUSTC_LOG=rustc_codegen_ssa::back::link=info
 #cargo ndk -t arm64-v8a  build --verbose
-cargo ndk -t arm64-v8a  build
+cargo ndk -t arm64-v8a -o ../app/src/main/cpp/libs  build --release

@@ -50,6 +50,11 @@ android {
     buildFeatures {
         viewBinding = false
     }
+
+    sourceSets.getByName("main"){
+        jniLibs.srcDirs("src/main/cpp/libs")
+
+    }
 }
 
 dependencies {
