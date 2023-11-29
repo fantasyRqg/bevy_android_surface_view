@@ -15,4 +15,4 @@ Run `./gradlew assembleDebug` in the root directory of this project.
 >  This modification has pushed to https://github.com/fantasyRqg/bevy/tree/no_winit
 
 ## Problems
-No problems found yet.
+1. Memory leak. Bevy seems not care about the resource release after the app exit. So you have to take care of it yourself (remove all handle hold in `Resource`). Even though my goal is to enable reenter bevy, I think it's better to start bevy only once and keep it running until the app exit. We can manipulate with `SurfaceView` to show or hide the bevy window.
