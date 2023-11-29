@@ -1,5 +1,6 @@
 use std::sync::{Arc, Condvar, mpsc, Mutex, MutexGuard, OnceLock};
 use std::sync::mpsc::Sender;
+use ::winit::platform::android::activity::AndroidApp;
 
 use bevy::asset::ErasedAssetLoader;
 use bevy::input::touch::TouchPhase;
@@ -7,6 +8,7 @@ use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::WindowMode;
+use bevy::winit::WinitPlugin;
 use ndk::asset::AssetManager;
 use ndk::native_window::NativeWindow;
 
@@ -91,7 +93,7 @@ pub fn run_game_loop() {
                     ..default()
                 })
                 .set(ImagePlugin::default_nearest())
-            // .disable::<WinitPlugin>() // removed by bevy feature selection
+            .disable::<WinitPlugin>() // removed by bevy feature selection
         )
         .insert_resource(LastTouchMove::default())
         .add_plugins(MyWinitPlugin {})
@@ -281,6 +283,6 @@ pub fn get_asset_manager() -> Option<ndk::asset::AssetManager> {
 }
 
 // only for compile. bevy depends on android-activity, and this lib needs this function to compile.
-// #[no_mangle]
-// fn android_main(_: AndroidApp) {}
+#[no_mangle]
+fn android_main(_: AndroidApp) {}
 

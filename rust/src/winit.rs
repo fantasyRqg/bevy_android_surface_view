@@ -71,6 +71,7 @@ struct WindowAndInputEventWriters<'w> {
     cursor_left: EventWriter<'w, CursorLeft>,
     // `winit` `DeviceEvent`s
     mouse_motion: EventWriter<'w, MouseMotion>,
+    app_exit: EventWriter<'w, AppExit>,
 }
 
 fn my_runner(mut app: App) {
@@ -185,6 +186,19 @@ fn my_runner(mut app: App) {
                     height: window.height(),
                 });
 
+                let (mut event_writers,
+                    _,
+                ) = event_writer_system_state.get_mut(&mut app.world);
+
+                match winit_window.started {
+                    false => {
+                        event_writers.lifetime.send(ApplicationLifetime::Started);
+                    }
+                    _ => {
+                        event_writers.lifetime.send(ApplicationLifetime::Resumed);
+                    }
+                }
+
                 winit_window.app_should_run = true;
             }
             Cmd::SurfaceDestroyed => {
@@ -204,11 +218,25 @@ fn my_runner(mut app: App) {
                     window: window_entity,
                 });
 
+                let (mut event_writers,
+                    _,
+                ) = event_writer_system_state.get_mut(&mut app.world);
+
+                event_writers.lifetime.send(ApplicationLifetime::Suspended);
+
                 winit_window.will_suspend = true;
             }
 
             Cmd::StopGame => {
-                *quit = true;
+                let (mut event_writers,
+                    _,
+                ) = event_writer_system_state.get_mut(&mut app.world);
+
+                event_writers.window_close_requested.send(WindowCloseRequested {
+                    window: winit_window.entity.unwrap(),
+                });
+
+                event_writers.app_exit.send(AppExit);
             }
             Cmd::TouchEvent(input) => {
                 let (mut event_writers,
@@ -220,25 +248,25 @@ fn my_runner(mut app: App) {
                     .send(input);
             }
             Cmd::OnResume => {
-                let (mut event_writers,
-                    _,
-                ) = event_writer_system_state.get_mut(&mut app.world);
-
-                match winit_window.started {
-                    false => {
-                        event_writers.lifetime.send(ApplicationLifetime::Started);
-                    }
-                    _ => {
-                        event_writers.lifetime.send(ApplicationLifetime::Resumed);
-                    }
-                }
+                // let (mut event_writers,
+                //     _,
+                // ) = event_writer_system_state.get_mut(&mut app.world);
+                //
+                // match winit_window.started {
+                //     false => {
+                //         event_writers.lifetime.send(ApplicationLifetime::Started);
+                //     }
+                //     _ => {
+                //         event_writers.lifetime.send(ApplicationLifetime::Resumed);
+                //     }
+                // }
             }
             Cmd::OnPause => {
-                let (mut event_writers,
-                    _,
-                ) = event_writer_system_state.get_mut(&mut app.world);
-
-                event_writers.lifetime.send(ApplicationLifetime::Suspended);
+                // let (mut event_writers,
+                //     _,
+                // ) = event_writer_system_state.get_mut(&mut app.world);
+                //
+                // event_writers.lifetime.send(ApplicationLifetime::Suspended);
             }
         }
     };
@@ -256,9 +284,6 @@ fn my_runner(mut app: App) {
         {
             // handle app update after drain events
             if app.plugins_state() == PluginsState::Cleaned && winit_window.app_should_run {
-                winit_window.last_update = Instant::now();
-                app.update();
-
                 if winit_window.will_suspend {
                     let window_entity = winit_window.entity;
                     if window_entity == None {
@@ -271,6 +296,8 @@ fn my_runner(mut app: App) {
                     winit_window.app_should_run = false;
                     winit_window.will_suspend = false;
 
+                    app.update();
+
                     info!("surfaceDestroyed handled, modify done to true");
                     let mut done = CMD_QUEUE.get().unwrap()
                         .surface_destroyed_handle_done.lock().unwrap();
@@ -278,8 +305,13 @@ fn my_runner(mut app: App) {
                     info!("surfaceDestroyed handled, notify_one");
                     let _ = CMD_QUEUE.get().unwrap()
                         .surface_destroyed_handle_done_var.notify_one();
+                } else {
+                    winit_window.last_update = Instant::now();
+                    // info!("update app");
+                    app.update();
                 }
             }
+
             if let Some(app_exit_events) = app.world.get_resource::<Events<AppExit>>() {
                 if app_exit_event_reader.read(app_exit_events).last().is_some() {
                     quit = true;
@@ -295,6 +327,7 @@ fn my_runner(mut app: App) {
             let next_wait_duration = wait_duration
                 .checked_sub(since_last_update)
                 .unwrap_or_else(|| Duration::from_secs(0));
+            // info!("next_wait_duration: {:?}", next_wait_duration);
             if let Ok(event) = cmd_receiver.recv_timeout(next_wait_duration) {
                 // info!("event: {:?}", event);
                 event_handler(event, &mut quit, &mut app, &mut winit_window);
