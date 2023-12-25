@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 #bevy = { path = "/Users/rqg/Playground/bevy" }
-bevy = {  git = "https://github.com/fantasyRqg/bevy.git", branch = "no_winit"}
+bevy = "0.12.1"
 winit = "0.28.7"
 raw-window-handle = "0.5.2"
 ndk = "0.7.0"

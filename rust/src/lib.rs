@@ -11,11 +11,13 @@ use bevy::window::WindowMode;
 use bevy::winit::WinitPlugin;
 use ndk::asset::AssetManager;
 use ndk::native_window::NativeWindow;
+use crate::asset::AndroidAssetReaderPlugin;
 
 use crate::winit::MyWinitPlugin;
 
 mod winit;
 mod c_api;
+mod asset;
 
 #[derive(Debug)]
 enum Cmd {
@@ -76,6 +78,7 @@ pub fn run_game_loop() {
 
     let mut app = App::new();
     app
+        .add_plugins(AndroidAssetReaderPlugin)
         .add_plugins(
             DefaultPlugins
                 .set(
@@ -266,7 +269,6 @@ fn btn_system(
     }
 }
 
-#[no_mangle]
 pub fn get_asset_manager() -> Option<ndk::asset::AssetManager> {
     let asset_manager = CMD_QUEUE.get().unwrap()
         .asset_manager.lock().unwrap();
